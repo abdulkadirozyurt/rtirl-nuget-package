@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>RtIrl.Api</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>aoz</Authors>
+    <Company>RTIRL</Company>
+    <Description>.NET 10 Client API library for rtirl.com. Ported from @rtirl/api npm package. Supports real-time location, speed, and telemetry data via Firebase.</Description>
+    <PackageProjectUrl>https://github.com/aoz/rtirl-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aoz/rtirl-dotnet</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>rtirl;irl;streaming;gps;realtime;firebase</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FirebaseDatabase.net" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
