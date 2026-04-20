@@ -1,4 +1,4 @@
-namespace RtIrl.Api.Models;
+namespace RealtimeIrl.ApiClient.Models;
 
 /// <summary>
 /// Represents the Firebase application configuration, similar to the JS SDK.

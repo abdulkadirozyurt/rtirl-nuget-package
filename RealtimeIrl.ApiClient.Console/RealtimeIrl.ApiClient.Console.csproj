@@ -8,7 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RtIrl.Api\RtIrl.Api.csproj" />
+    <ProjectReference Include="..\RealtimeIrl.ApiClient\RealtimeIrl.ApiClient.csproj" />
   </ItemGroup>
+
+ 
 
 </Project>

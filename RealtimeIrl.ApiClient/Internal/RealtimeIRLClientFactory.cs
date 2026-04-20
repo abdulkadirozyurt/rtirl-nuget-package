@@ -1,16 +1,16 @@
-using RtIrl.Api.Abstractions;
-using RtIrl.Api.Infrastructure;
+using RealtimeIrl.ApiClient.Abstractions;
+using RealtimeIrl.ApiClient.Infrastructure.Abstractions;
 
-namespace RtIrl.Api.Internal;
+namespace RealtimeIrl.ApiClient.Internal;
 
 /// <summary>
 /// Internal implementation of the RTIRL client factory.
 /// </summary>
-internal class RtIrlClientFactory : IRtIrlClientFactory
+internal class RealtimeIRLClientFactory : IRealtimeIRLClientFactory
 {
     private readonly IFirebaseConnectionFactory _connectionFactory;
 
-    public RtIrlClientFactory(IFirebaseConnectionFactory connectionFactory)
+    public RealtimeIRLClientFactory(IFirebaseConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }

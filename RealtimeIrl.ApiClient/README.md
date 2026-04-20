@@ -1,4 +1,4 @@
-# RtIrl.Api
+# RealtimeIrl.ApiClient
 
 .NET 10 Client API library for [rtirl.com](https://rtirl.com).
 
@@ -9,7 +9,7 @@ This is a .NET port of the official `@rtirl/api` npm package. It allows you to l
 Install via NuGet:
 
 ```bash
-dotnet add package RtIrl.Api
+dotnet add package RealtimeIrl.ApiClient
 ```
 
 ## Complete Usage Guide
@@ -21,8 +21,8 @@ The API provides two main access methods: **Pull Key** (Private Data) and **Stre
 A Pull Key allows access to all telemetry data broadcasted by the streamer's device. 
 
 ```csharp
-using RtIrl.Api;
-using RtIrl.Api.Models;
+using RealtimeIrl.ApiClient;
+using RealtimeIrl.ApiClient.Models;
 
 var pullKey = "YOUR_PULL_KEY";
 
@@ -65,7 +65,17 @@ client.AddPedometerStepsListener(steps => {
     Console.WriteLine($"Steps taken: {steps}");
 });
 
-// 8. Session ID (UUID) - Returns string?
+// 8. Cycling Crank (RPM/streamer-defined unit) - Returns int
+client.AddCyclingCrankListener(crank => {
+    Console.WriteLine($"Crank: {crank}");
+});
+
+// 9. Cycling Wheel (RPM/streamer-defined unit) - Returns int
+client.AddCyclingWheelListener(wheel => {
+    Console.WriteLine($"Wheel: {wheel}");
+});
+
+// 10. Session ID (UUID) - Returns string?
 // Triggered when a new session starts. Returns null if the streamer is offline.
 client.AddSessionIdListener(sessionId => {
     if (sessionId != null)
@@ -74,7 +84,7 @@ client.AddSessionIdListener(sessionId => {
         Console.WriteLine("Streamer went offline.");
 });
 
-// 9. Raw Data / Unstructured Data - Returns object?
+// 11. Raw Data / Unstructured Data - Returns object?
 // Listen to the entire pull key node including telemetry not mapped to typed properties.
 client.AddListener(data => {
     Console.WriteLine($"Raw Firebase Node Data: {data}");
@@ -84,12 +94,22 @@ client.AddListener(data => {
 Console.ReadLine();
 ```
 
+### 3. Top-level helper methods (npm-like convenience)
+
+```csharp
+using RealtimeIrl.ApiClient;
+
+var sub = RealtimeIRL.AddLocationListener("YOUR_PULL_KEY", loc => {
+    Console.WriteLine($"{loc.Latitude}, {loc.Longitude}");
+});
+```
+
 ### 2. Using Streamer ID (Public Location Data)
 
 If you only know the streamer's public platform ID (e.g., Twitch user ID), you can only access their public location. This location might be hidden if the streamer is offline or has chosen to restrict it.
 
 ```csharp
-using RtIrl.Api;
+using RealtimeIrl.ApiClient;
 
 // Provider: "twitch", UserId: "463756153"
 using var client = RealtimeIRL.ForStreamer("twitch", "463756153");
@@ -103,6 +123,8 @@ client.AddLocationListener(loc => {
 
 Console.ReadLine();
 ```
+
+`AddLocationListener` emits one immediate snapshot on subscribe (including `null` when location is hidden/offline), then continues with realtime updates.
 
 ## Unsubscribing from Listeners (Cleanup)
 
@@ -125,6 +147,14 @@ Alternatively, disposing the entire `client` instance (e.g., via the `using` sta
 - **Clean Architecture:** Built with SOLID principles, highly modular, and testable.
 - **Easy Cleanup:** All listeners return `IDisposable` for granular or bulk memory management.
 - **Modern .NET:** Targeted for .NET 10.
+
+## npm parity notes
+
+- `InitializeApp(config)` now applies `config.DatabaseUrl` to runtime Firebase connection creation.
+- `AddSessionIdListener` and `AddListener` propagate `null` values to callbacks (same `onValue` semantics).
+- Added missing pull-key listeners: `AddCyclingCrankListener` and `AddCyclingWheelListener`.
+- Added top-level convenience wrappers: `AddLocationListener`, `AddSpeedListener`, `AddHeadingListener`, `AddAltitudeListener`, `AddSessionIdListener`.
+- Firebase Analytics event logging from the npm package is intentionally not implemented in this .NET port.
 
 ## License
 

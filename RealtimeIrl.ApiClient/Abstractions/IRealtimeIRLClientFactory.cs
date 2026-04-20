@@ -1,11 +1,9 @@
-using RtIrl.Api.Abstractions;
-
-namespace RtIrl.Api.Abstractions;
+namespace RealtimeIrl.ApiClient.Abstractions;
 
 /// <summary>
 /// Factory for creating RTIRL clients.
 /// </summary>
-public interface IRtIrlClientFactory
+public interface IRealtimeIRLClientFactory
 {
     IPullKeyClient ForPullKey(string pullKey);
     IStreamerClient ForStreamer(string provider, string userId);
