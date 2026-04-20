@@ -1,20 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>RealtimeIrl.ApiClient</PackageId>
     <Version>1.0.0</Version>
+    <Title>RealtimeIRL API Client</Title>
     <Authors>aoz</Authors>
     <Company>RTIRL</Company>
-    <Description>.NET 10 Client API library for rtirl.com. Ported from @rtirl/api npm package. Supports real-time location, speed, and telemetry data via Firebase.</Description>
+    <Description>.NET client API library for rtirl.com. Ported from @rtirl/api npm package. Supports real-time location, speed, and telemetry data via Firebase.</Description>
+    <PackageSummary>.NET API client for RealtimeIRL telemetry streams.</PackageSummary>
     <PackageProjectUrl>https://github.com/aoz/rtirl-dotnet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/aoz/rtirl-dotnet</RepositoryUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>rtirl;irl;streaming;gps;realtime;firebase</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial public release of the RealtimeIRL .NET API client.</PackageReleaseNotes>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PackageOutputPath>..\artifacts\packages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

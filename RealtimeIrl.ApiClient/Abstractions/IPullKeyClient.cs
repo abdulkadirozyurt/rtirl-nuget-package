@@ -7,15 +7,36 @@ namespace RealtimeIrl.ApiClient.Abstractions;
 /// </summary>
 public interface IPullKeyClient : IClient
 {
-    IDisposable AddLocationListener(Action<Location> callback);
-    IDisposable AddSpeedListener(Action<double> callback);
-    IDisposable AddHeadingListener(Action<double> callback);
-    IDisposable AddAltitudeListener(Action<double> callback);
-    IDisposable AddHeartRateListener(Action<int> callback);
-    IDisposable AddCyclingPowerListener(Action<int> callback);
-    IDisposable AddCyclingCrankListener(Action<int> callback);
-    IDisposable AddCyclingWheelListener(Action<int> callback);
-    IDisposable AddPedometerStepsListener(Action<long> callback);
-    IDisposable AddSessionIdListener(Action<string?> callback);
-    IDisposable AddListener(Action<object?> callback);
+    /// <summary>Listens for private location updates for the pull key.</summary>
+    IDisposable AddLocationListener(Action<Location> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for speed updates in meters per second.</summary>
+    IDisposable AddSpeedListener(Action<double> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for heading updates in degrees.</summary>
+    IDisposable AddHeadingListener(Action<double> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for altitude updates in meters.</summary>
+    IDisposable AddAltitudeListener(Action<double> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for heart rate updates in beats per minute.</summary>
+    IDisposable AddHeartRateListener(Action<int> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for cycling power updates in watts.</summary>
+    IDisposable AddCyclingPowerListener(Action<int> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for cycling crank updates.</summary>
+    IDisposable AddCyclingCrankListener(Action<int> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for cycling wheel updates.</summary>
+    IDisposable AddCyclingWheelListener(Action<int> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for pedometer step count updates.</summary>
+    IDisposable AddPedometerStepsListener(Action<long> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for active session id updates.</summary>
+    IDisposable AddSessionIdListener(Action<string?> callback, Action<Exception>? onError = null);
+
+    /// <summary>Listens for raw pull-key node updates.</summary>
+    IDisposable AddListener(Action<object?> callback, Action<Exception>? onError = null);
 }

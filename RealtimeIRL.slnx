@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="RealtimeIrl.ApiClient.Console/RealtimeIrl.ApiClient.Console.csproj" />
   <Project Path="RealtimeIrl.ApiClient/RealtimeIrl.ApiClient.csproj" DisplayName="RealtimeIrl.ApiClient" />
+  <Project Path="RealtimeIrl.ApiClient.Tests/RealtimeIrl.ApiClient.Tests.csproj" />
 </Solution>

@@ -3,9 +3,11 @@ using RealtimeIrl.ApiClient.Infrastructure.Abstractions;
 
 namespace RealtimeIrl.ApiClient.Infrastructure;
 
-public class FirebaseConnectionFactory(string databaseUrl) : IFirebaseConnectionFactory
+internal class FirebaseConnectionFactory(string databaseUrl) : IFirebaseConnectionFactory
 {
-    private readonly string _databaseUrl = databaseUrl;
+    private readonly string _databaseUrl = string.IsNullOrWhiteSpace(databaseUrl)
+        ? throw new ArgumentException("Firebase database URL cannot be null or empty.", nameof(databaseUrl))
+        : databaseUrl;
 
     public FirebaseClient CreateClient()
     {

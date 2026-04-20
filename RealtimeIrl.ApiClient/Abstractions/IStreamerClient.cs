@@ -8,5 +8,6 @@ namespace RealtimeIrl.ApiClient.Abstractions;
 /// </summary>
 public interface IStreamerClient : IClient
 {
-    IDisposable AddLocationListener(Action<Location?> callback);
+    /// <summary>Listens for public streamer location updates. The value is null when hidden or unavailable.</summary>
+    IDisposable AddLocationListener(Action<Location?> callback, Action<Exception>? onError = null);
 }

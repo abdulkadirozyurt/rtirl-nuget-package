@@ -14,24 +14,28 @@ internal class PullKeyClient : IPullKeyClient
 
     public PullKeyClient(FirebaseClient client, string pullKey)
     {
-        _client = client;
-        _pullKey = pullKey;
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+        _pullKey = string.IsNullOrWhiteSpace(pullKey)
+            ? throw new ArgumentException("Pull key cannot be null or empty.", nameof(pullKey))
+            : pullKey;
     }
 
-    public IDisposable AddLocationListener(Action<Location> callback) => Subscribe("location", callback);
-    public IDisposable AddSpeedListener(Action<double> callback) => Subscribe("speed", callback);
-    public IDisposable AddHeadingListener(Action<double> callback) => Subscribe("heading", callback);
-    public IDisposable AddAltitudeListener(Action<double> callback) => Subscribe("altitude", callback);
-    public IDisposable AddHeartRateListener(Action<int> callback) => Subscribe("heartRate", callback);
-    public IDisposable AddCyclingPowerListener(Action<int> callback) => Subscribe("cyclingPower", callback);
-    public IDisposable AddCyclingCrankListener(Action<int> callback) => Subscribe("cyclingCrank", callback);
-    public IDisposable AddCyclingWheelListener(Action<int> callback) => Subscribe("cyclingWheel", callback);
-    public IDisposable AddPedometerStepsListener(Action<long> callback) => Subscribe("pedometerSteps", callback);
-    public IDisposable AddSessionIdListener(Action<string?> callback) => SubscribeNullable("sessionId", callback);
-    public IDisposable AddListener(Action<object?> callback) => SubscribeNullable("", callback);
+    public IDisposable AddLocationListener(Action<Location> callback, Action<Exception>? onError = null) => Subscribe("location", callback, onError);
+    public IDisposable AddSpeedListener(Action<double> callback, Action<Exception>? onError = null) => Subscribe("speed", callback, onError);
+    public IDisposable AddHeadingListener(Action<double> callback, Action<Exception>? onError = null) => Subscribe("heading", callback, onError);
+    public IDisposable AddAltitudeListener(Action<double> callback, Action<Exception>? onError = null) => Subscribe("altitude", callback, onError);
+    public IDisposable AddHeartRateListener(Action<int> callback, Action<Exception>? onError = null) => Subscribe("heartRate", callback, onError);
+    public IDisposable AddCyclingPowerListener(Action<int> callback, Action<Exception>? onError = null) => Subscribe("cyclingPower", callback, onError);
+    public IDisposable AddCyclingCrankListener(Action<int> callback, Action<Exception>? onError = null) => Subscribe("cyclingCrank", callback, onError);
+    public IDisposable AddCyclingWheelListener(Action<int> callback, Action<Exception>? onError = null) => Subscribe("cyclingWheel", callback, onError);
+    public IDisposable AddPedometerStepsListener(Action<long> callback, Action<Exception>? onError = null) => Subscribe("pedometerSteps", callback, onError);
+    public IDisposable AddSessionIdListener(Action<string?> callback, Action<Exception>? onError = null) => SubscribeNullable("sessionId", callback, onError);
+    public IDisposable AddListener(Action<object?> callback, Action<Exception>? onError = null) => SubscribeNullable("", callback, onError);
 
-    private IDisposable Subscribe<T>(string property, Action<T> callback)
+    private IDisposable Subscribe<T>(string property, Action<T> callback, Action<Exception>? onError)
     {
+        ArgumentNullException.ThrowIfNull(callback);
+
         var query = _client.Child("pullables").Child(_pullKey);
         if (!string.IsNullOrEmpty(property))
         {
@@ -48,14 +52,16 @@ internal class PullKeyClient : IPullKeyClient
                 {
                     callback(d.Object);
                 }
-            }, ex => Console.WriteLine($"[Firebase Error] {property}: {ex.Message}"));
+            }, ex => onError?.Invoke(ex));
 
         _subscriptions.Add(subscription);
         return subscription;
     }
 
-    private IDisposable SubscribeNullable<T>(string property, Action<T?> callback) where T : class
+    private IDisposable SubscribeNullable<T>(string property, Action<T?> callback, Action<Exception>? onError) where T : class
     {
+        ArgumentNullException.ThrowIfNull(callback);
+
         var query = _client.Child("pullables").Child(_pullKey);
         if (!string.IsNullOrEmpty(property))
         {
@@ -66,7 +72,7 @@ internal class PullKeyClient : IPullKeyClient
             .AsObservable<T?>()
             .Subscribe(
                 d => callback(d.Object),
-                ex => Console.WriteLine($"[Firebase Error] {property}: {ex.Message}")
+                ex => onError?.Invoke(ex)
             );
 
         _subscriptions.Add(subscription);

@@ -11,13 +11,11 @@ internal class StreamerClient : IStreamerClient
     private sealed class CompositeSubscription : IDisposable
     {
         private readonly List<IDisposable> _inner;
-        private readonly Action? _onDispose;
         private bool _disposed;
 
-        public CompositeSubscription(List<IDisposable> inner, Action? onDispose = null)
+        public CompositeSubscription(List<IDisposable> inner)
         {
             _inner = inner;
-            _onDispose = onDispose;
         }
 
         public void Dispose()
@@ -32,8 +30,6 @@ internal class StreamerClient : IStreamerClient
             {
                 sub.Dispose();
             }
-
-            _onDispose?.Invoke();
         }
     }
 
@@ -43,30 +39,38 @@ internal class StreamerClient : IStreamerClient
 
     public StreamerClient(FirebaseClient client, string provider, string userId)
     {
-        _client = client;
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+        provider = string.IsNullOrWhiteSpace(provider)
+            ? throw new ArgumentException("Provider cannot be null or empty.", nameof(provider))
+            : provider;
+        userId = string.IsNullOrWhiteSpace(userId)
+            ? throw new ArgumentException("User ID cannot be null or empty.", nameof(userId))
+            : userId;
         _path = $"{provider}:{userId}";
     }
 
-    public IDisposable AddLocationListener(Action<Location?> callback)
+    public IDisposable AddLocationListener(Action<Location?> callback, Action<Exception>? onError = null)
     {
+        ArgumentNullException.ThrowIfNull(callback);
+
         var locationQuery = _client
             .Child("streamers")
             .Child(_path)
             .Child("location");
 
-        // npm onValue parity: subscription açıldığında anlık snapshot'ı da gönder.
-        var lastEmitted = locationQuery.OnceSingleAsync<Location?>().GetAwaiter().GetResult();
-        double? lastLatitude = lastEmitted?.Latitude;
-        double? lastLongitude = lastEmitted?.Longitude;
-        callback(lastEmitted);
+        Location? lastEmitted = null;
+        double? lastLatitude = null;
+        double? lastLongitude = null;
+        var hasEmitted = false;
 
         void EmitIfChanged(Location? next)
         {
-            if (EqualityComparer<Location?>.Default.Equals(lastEmitted, next))
+            if (hasEmitted && EqualityComparer<Location?>.Default.Equals(lastEmitted, next))
             {
                 return;
             }
 
+            hasEmitted = true;
             lastEmitted = next;
             callback(next);
         }
@@ -81,7 +85,7 @@ internal class StreamerClient : IStreamerClient
                     lastLongitude = next?.Longitude;
                     EmitIfChanged(next);
                 },
-                ex => Console.WriteLine($"[Firebase Error] Location: {ex.Message}")
+                ex => onError?.Invoke(ex)
             );
 
         var latitudeSubscription = locationQuery
@@ -99,7 +103,7 @@ internal class StreamerClient : IStreamerClient
 
                     EmitIfChanged(new Location(lastLatitude.Value, lastLongitude.Value));
                 },
-                ex => Console.WriteLine($"[Firebase Error] Location: {ex.Message}")
+                ex => onError?.Invoke(ex)
             );
 
         var longitudeSubscription = locationQuery
@@ -117,37 +121,11 @@ internal class StreamerClient : IStreamerClient
 
                     EmitIfChanged(new Location(lastLatitude.Value, lastLongitude.Value));
                 },
-                ex => Console.WriteLine($"[Firebase Error] Location: {ex.Message}")
+                ex => onError?.Invoke(ex)
             );
 
-        var pollingCancellation = new CancellationTokenSource();
-        var pollingTask = Task.Run(async () =>
-        {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
-            while (await timer.WaitForNextTickAsync(pollingCancellation.Token))
-            {
-                var polled = await locationQuery.OnceSingleAsync<Location?>();
-                lastLatitude = polled?.Latitude;
-                lastLongitude = polled?.Longitude;
-                EmitIfChanged(polled);
-            }
-        }, pollingCancellation.Token);
-
-        _ = pollingTask.ContinueWith(
-            t => Console.WriteLine($"[Firebase Error] Location polling: {t.Exception?.GetBaseException().Message}"),
-            TaskContinuationOptions.OnlyOnFaulted
-        );
-        _ = pollingTask.ContinueWith(_ => pollingCancellation.Dispose(), TaskScheduler.Default);
-
         var composite = new CompositeSubscription(
-            [locationSubscription, latitudeSubscription, longitudeSubscription],
-            () =>
-            {
-                if (!pollingCancellation.IsCancellationRequested)
-                {
-                    pollingCancellation.Cancel();
-                }
-            }
+            [locationSubscription, latitudeSubscription, longitudeSubscription]
         );
         _subscriptions.Add(composite);
         return composite;

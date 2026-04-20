@@ -2,7 +2,7 @@
 
 namespace RealtimeIrl.ApiClient.Infrastructure.Abstractions;
 
-public interface IFirebaseConnectionFactory
+internal interface IFirebaseConnectionFactory
 {
     FirebaseClient CreateClient();
 }

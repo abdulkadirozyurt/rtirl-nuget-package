@@ -1,161 +1,120 @@
 # RealtimeIrl.ApiClient
 
-.NET 10 Client API library for [rtirl.com](https://rtirl.com).
+.NET API client library for [rtirl.com](https://rtirl.com). It provides a typed .NET wrapper around the RealtimeIRL Firebase Realtime Database streams, based on the official `@rtirl/api` npm package.
 
-This is a .NET port of the official `@rtirl/api` npm package. It allows you to listen to real-time telemetry data (location, speed, heart rate, etc.) from IRL streamers using Firebase Realtime Database.
+## Requirements
+
+- .NET 8 or later
+- A RealtimeIRL pull key for private telemetry, or a public streamer provider/user id pair for public location data
 
 ## Installation
-
-Install via NuGet:
 
 ```bash
 dotnet add package RealtimeIrl.ApiClient
 ```
 
-## Complete Usage Guide
+## Pull Key Telemetry
 
-The API provides two main access methods: **Pull Key** (Private Data) and **Streamer ID** (Public Data).
+A pull key gives access to the private telemetry node for a streamer.
 
-### 1. Using Pull Key (Private, Full Telemetry Data)
+```csharp
+using RealtimeIrl.ApiClient;
 
-A Pull Key allows access to all telemetry data broadcasted by the streamer's device. 
+using var client = RealtimeIRL.ForPullKey("YOUR_PULL_KEY");
+
+using var locationSub = client.AddLocationListener(location =>
+{
+    Console.WriteLine($"Location: {location.Latitude}, {location.Longitude}");
+});
+
+using var speedSub = client.AddSpeedListener(speed =>
+{
+    Console.WriteLine($"Speed: {speed} m/s");
+});
+
+Console.ReadLine();
+```
+
+Available pull-key listeners:
+
+- `AddLocationListener(Action<Location> callback)`
+- `AddSpeedListener(Action<double> callback)`
+- `AddHeadingListener(Action<double> callback)`
+- `AddAltitudeListener(Action<double> callback)`
+- `AddHeartRateListener(Action<int> callback)`
+- `AddCyclingPowerListener(Action<int> callback)`
+- `AddCyclingCrankListener(Action<int> callback)`
+- `AddCyclingWheelListener(Action<int> callback)`
+- `AddPedometerStepsListener(Action<long> callback)`
+- `AddSessionIdListener(Action<string?> callback)`
+- `AddListener(Action<object?> callback)` for raw pull-key node updates
+
+## Public Streamer Location
+
+Public streamer access only exposes public location data. The callback may receive `null` when the streamer is offline or location is hidden.
+
+```csharp
+using RealtimeIrl.ApiClient;
+
+using var client = RealtimeIRL.ForStreamer("twitch", "463756153");
+
+using var sub = client.AddLocationListener(location =>
+{
+    if (location is null)
+    {
+        Console.WriteLine("Location is hidden or unavailable.");
+        return;
+    }
+
+    Console.WriteLine($"Public location: {location.Latitude}, {location.Longitude}");
+});
+
+Console.ReadLine();
+```
+
+## Error Handling
+
+Every listener accepts an optional error callback. The library does not write Firebase errors to `Console`.
+
+```csharp
+using var sub = client.AddLocationListener(
+    location => Console.WriteLine($"{location.Latitude}, {location.Longitude}"),
+    error => Console.Error.WriteLine(error.Message));
+```
+
+## Custom Firebase Database URL
+
+The default configuration points at the RealtimeIRL Firebase database. If needed, initialize a custom app before creating clients.
 
 ```csharp
 using RealtimeIrl.ApiClient;
 using RealtimeIrl.ApiClient.Models;
 
-var pullKey = "YOUR_PULL_KEY";
-
-// Initialize the client
-using var client = RealtimeIRL.ForPullKey(pullKey);
-
-// 1. Location (Latitude, Longitude)
-client.AddLocationListener(loc => {
-    Console.WriteLine($"Location: {loc.Latitude}, {loc.Longitude}");
+RealtimeIRL.InitializeApp(new FirebaseAppConfig
+{
+    DatabaseUrl = "https://your-database.firebaseio.com"
 });
+```
 
-// 2. Speed (Meters per second) - Returns double
-client.AddSpeedListener(speed => {
+## Cleanup
+
+Each listener returns an `IDisposable`. Dispose individual subscriptions to stop a listener, or dispose the client to stop all listeners created by that client.
+
+```csharp
+var speedSubscription = client.AddSpeedListener(speed =>
+{
     Console.WriteLine($"Speed: {speed} m/s");
 });
 
-// 3. Heading (Degrees) - Returns double
-client.AddHeadingListener(heading => {
-    Console.WriteLine($"Heading: {heading}°");
-});
-
-// 4. Altitude (Meters) - Returns double
-client.AddAltitudeListener(altitude => {
-    Console.WriteLine($"Altitude: {altitude} m");
-});
-
-// 5. Heart Rate (Beats per minute) - Returns int
-client.AddHeartRateListener(bpm => {
-    Console.WriteLine($"Heart Rate: {bpm} BPM");
-});
-
-// 6. Cycling Power (Watts) - Returns int
-client.AddCyclingPowerListener(watts => {
-    Console.WriteLine($"Power: {watts} W");
-});
-
-// 7. Pedometer Steps (Total steps) - Returns long
-// Note: This number is monotonically increasing for a given session.
-client.AddPedometerStepsListener(steps => {
-    Console.WriteLine($"Steps taken: {steps}");
-});
-
-// 8. Cycling Crank (RPM/streamer-defined unit) - Returns int
-client.AddCyclingCrankListener(crank => {
-    Console.WriteLine($"Crank: {crank}");
-});
-
-// 9. Cycling Wheel (RPM/streamer-defined unit) - Returns int
-client.AddCyclingWheelListener(wheel => {
-    Console.WriteLine($"Wheel: {wheel}");
-});
-
-// 10. Session ID (UUID) - Returns string?
-// Triggered when a new session starts. Returns null if the streamer is offline.
-client.AddSessionIdListener(sessionId => {
-    if (sessionId != null)
-        Console.WriteLine($"Online! Session ID: {sessionId}");
-    else
-        Console.WriteLine("Streamer went offline.");
-});
-
-// 11. Raw Data / Unstructured Data - Returns object?
-// Listen to the entire pull key node including telemetry not mapped to typed properties.
-client.AddListener(data => {
-    Console.WriteLine($"Raw Firebase Node Data: {data}");
-});
-
-// Keep the console application running to listen
-Console.ReadLine();
-```
-
-### 3. Top-level helper methods (npm-like convenience)
-
-```csharp
-using RealtimeIrl.ApiClient;
-
-var sub = RealtimeIRL.AddLocationListener("YOUR_PULL_KEY", loc => {
-    Console.WriteLine($"{loc.Latitude}, {loc.Longitude}");
-});
-```
-
-### 2. Using Streamer ID (Public Location Data)
-
-If you only know the streamer's public platform ID (e.g., Twitch user ID), you can only access their public location. This location might be hidden if the streamer is offline or has chosen to restrict it.
-
-```csharp
-using RealtimeIrl.ApiClient;
-
-// Provider: "twitch", UserId: "463756153"
-using var client = RealtimeIRL.ForStreamer("twitch", "463756153");
-
-client.AddLocationListener(loc => {
-    if (loc != null)
-        Console.WriteLine($"Public Location: {loc.Latitude}, {loc.Longitude}");
-    else
-        Console.WriteLine("Location is hidden or streamer is offline.");
-});
-
-Console.ReadLine();
-```
-
-`AddLocationListener` emits one immediate snapshot on subscribe (including `null` when location is hidden/offline), then continues with realtime updates.
-
-## Unsubscribing from Listeners (Cleanup)
-
-Under the hood, this library uses WebSockets. Every `Add*Listener` method returns an `IDisposable`. To stop listening to a specific event and free up resources, simply call `.Dispose()` on the returned object. This prevents memory leaks and closes the network connection for that specific node.
-
-```csharp
-var speedSubscription = client.AddSpeedListener(speed => {
-    Console.WriteLine($"Speed: {speed} m/s");
-});
-
-// Later in your code, when you no longer need speed updates:
 speedSubscription.Dispose();
 ```
 
-Alternatively, disposing the entire `client` instance (e.g., via the `using` statement or calling `client.Dispose()`) will automatically unsubscribe **all** active listeners attached to that client.
+## Notes
 
-## Features
-
-- **Real-time:** Uses WebSockets (via `FirebaseDatabase.net`) for low-latency updates.
-- **Clean Architecture:** Built with SOLID principles, highly modular, and testable.
-- **Easy Cleanup:** All listeners return `IDisposable` for granular or bulk memory management.
-- **Modern .NET:** Targeted for .NET 10.
-
-## npm parity notes
-
-- `InitializeApp(config)` now applies `config.DatabaseUrl` to runtime Firebase connection creation.
-- `AddSessionIdListener` and `AddListener` propagate `null` values to callbacks (same `onValue` semantics).
-- Added missing pull-key listeners: `AddCyclingCrankListener` and `AddCyclingWheelListener`.
-- Added top-level convenience wrappers: `AddLocationListener`, `AddSpeedListener`, `AddHeadingListener`, `AddAltitudeListener`, `AddSessionIdListener`.
-- Firebase Analytics event logging from the npm package is intentionally not implemented in this .NET port.
+- Firebase Analytics event logging from the npm package is not implemented in this .NET client.
+- `FirebaseAppConfig` currently uses only `DatabaseUrl`.
+- The package targets `net8.0`, so it can be consumed by .NET 8 and newer projects.
 
 ## License
 
-MIT
+Apache-2.0
